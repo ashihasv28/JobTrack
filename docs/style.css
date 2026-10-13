@@ -1,0 +1,374 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f3f5fb;
+    color: #252b42;
+    line-height: 1.5;
+}
+
+/* Header */
+header {
+    background: #252b42;
+    color: #ffffff;
+    padding: 26px 8%;
+}
+
+header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+header p {
+    color: #dce3f7;
+    font-size: 15px;
+}
+
+/* Main page layout */
+main {
+    width: 90%;
+    max-width: 1200px;
+    margin: 35px auto 40px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px;
+    align-items: start;
+}
+
+/* Dashboard spans the full width */
+.dashboard {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Dashboard cards */
+.summary-card {
+    min-width: 0;
+    background: #ffffff;
+    padding: 22px 24px;
+    border-radius: 14px;
+    border-top: 4px solid #4f46e5;
+    box-shadow: 0 5px 20px rgba(37, 43, 66, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(37, 43, 66, 0.10);
+}
+
+.summary-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #697187;
+    margin-bottom: 10px;
+}
+
+.summary-card p {
+    font-size: 30px;
+    font-weight: 700;
+    color: #252b42;
+}
+
+.interview-card {
+    border-top-color: #f59e0b;
+}
+
+.selected-card {
+    border-top-color: #10b981;
+}
+
+.rejected-card {
+    border-top-color: #ef4444;
+}
+
+/* Form and application-list panels */
+.form-section,
+.applications-section {
+    min-width: 0;
+    background: #ffffff;
+    padding: 26px;
+    border-radius: 14px;
+    box-shadow: 0 5px 20px rgba(37, 43, 66, 0.05);
+}
+
+.form-section h2,
+.applications-section h2 {
+    font-size: 21px;
+    margin-bottom: 20px;
+    color: #252b42;
+}
+
+/* Application form */
+#applicationForm {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+#applicationForm label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 5px;
+    color: #252b42;
+}
+
+input,
+select {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #dce2ef;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #252b42;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+/* General button styling */
+button {
+    border: none;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+button:focus-visible {
+    outline: 3px solid #a5b4fc;
+    outline-offset: 2px;
+}
+
+/* Add and Update button */
+#applicationForm button[type="submit"] {
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px 16px;
+    background: #4f46e5;
+    color: #ffffff;
+    font-size: 14px;
+}
+
+#applicationForm button[type="submit"]:hover {
+    background: #4338ca;
+}
+
+/* Search and filter */
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.filter-section input,
+.filter-section select {
+    width: 100%;
+}
+
+/* Applications list */
+#applicationsList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+.application-card {
+    min-width: 0;
+    background: #ffffff;
+    border: 1px solid #e3e8f2;
+    border-radius: 11px;
+    padding: 18px;
+    overflow-wrap: anywhere;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.application-card:hover {
+    border-color: #cbd2e5;
+    box-shadow: 0 4px 14px rgba(37, 43, 66, 0.05);
+}
+
+.application-card h3 {
+    font-size: 16px;
+    color: #252b42;
+    margin-bottom: 4px;
+}
+
+.application-card p {
+    font-size: 14px;
+    color: #697187;
+    margin-bottom: 3px;
+}
+
+/* Application status badge */
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 8px 0 0;
+    padding: 5px 11px;
+    border-radius: 20px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 12px;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+/* Edit and Delete buttons: equal size and alignment */
+.edit-button,
+.delete-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 68px;
+    min-height: 36px;
+    padding: 9px 14px;
+    margin: 10px 6px 0 0;
+    border: none;
+    border-radius: 7px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    vertical-align: middle;
+}
+
+.edit-button {
+    background-color: #4f46e5;
+}
+
+.edit-button:hover {
+    background-color: #4338ca;
+    box-shadow: 0 3px 8px rgba(79, 70, 229, 0.20);
+}
+
+.delete-button {
+    background-color: #dc2626;
+}
+
+.delete-button:hover {
+    background-color: #b91c1c;
+    box-shadow: 0 3px 8px rgba(220, 38, 38, 0.20);
+}
+
+.edit-button:focus-visible,
+.delete-button:focus-visible {
+    outline: 3px solid #a5b4fc;
+    outline-offset: 2px;
+}
+
+/* Success and error messages */
+#message {
+    margin-top: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+/* Tablet layout */
+@media (max-width: 900px) {
+    main {
+        width: 92%;
+        gap: 20px;
+    }
+
+    .dashboard {
+        gap: 12px;
+    }
+
+    .summary-card {
+        padding: 18px;
+    }
+
+    .form-section,
+    .applications-section {
+        padding: 22px;
+    }
+}
+
+/* Mobile layout */
+@media (max-width: 650px) {
+    header {
+        padding: 22px 5%;
+    }
+
+    header h1 {
+        font-size: 28px;
+    }
+
+    main {
+        width: 92%;
+        margin-top: 22px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+    }
+
+    .dashboard {
+        grid-column: 1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .summary-card {
+        padding: 17px;
+    }
+
+    .summary-card h3 {
+        font-size: 13px;
+    }
+
+    .summary-card p {
+        font-size: 26px;
+    }
+
+    .form-section,
+    .applications-section {
+        padding: 19px;
+    }
+
+    .form-section h2,
+    .applications-section h2 {
+        font-size: 19px;
+    }
+
+    .application-card {
+        padding: 15px;
+    }
+}
