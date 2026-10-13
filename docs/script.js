@@ -1,5 +1,5 @@
 
-const API_URL = "/api/applications";
+const STORAGE_KEY = "jobtrack_applications";
 
 const form = document.getElementById("applicationForm");
 const applicationsList = document.getElementById("applicationsList");
@@ -9,281 +9,166 @@ const filterStatus = document.getElementById("filterStatus");
 const sortDate = document.getElementById("sortDate");
 const applicationDateInput = document.getElementById("applicationDate");
 
-// Set today's date as the maximum application date
+let applications = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let editingId = null;
+
+function saveApplications() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(applications));
+}
+
 function setMaximumApplicationDate() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
-
-    applicationDateInput.max = `${year}-${month}-${day}`;
+  const today = new Date();
+  applicationDateInput.max =
+    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 }
 
-setMaximumApplicationDate();
-
-// Update dashboard and display applications
-async function loadApplications() {
-    try {
-        const response = await fetch(API_URL);
-
-        if (!response.ok) {
-            throw new Error("Failed to load applications");
-        }
-
-        const applications = await response.json();
-
-        // Dashboard counts
-        document.getElementById("totalCount").textContent =
-            applications.length;
-
-        document.getElementById("interviewCount").textContent =
-            applications.filter(app => app.status === "Interview").length;
-
-        document.getElementById("selectedCount").textContent =
-            applications.filter(app => app.status === "Selected").length;
-
-        document.getElementById("rejectedCount").textContent =
-            applications.filter(app => app.status === "Rejected").length;
-
-        // Search and status filter
-        const searchText = searchInput.value.toLowerCase().trim();
-        const selectedStatus = filterStatus.value;
-
-        const filteredApplications = applications.filter(application => {
-            const companyName =
-                (application.companyName || "").toLowerCase();
-
-            const jobRole =
-                (application.jobRole || "").toLowerCase();
-
-            const matchesSearch =
-                companyName.includes(searchText) ||
-                jobRole.includes(searchText);
-
-            const matchesStatus =
-                selectedStatus === "All" ||
-                application.status === selectedStatus;
-
-            return matchesSearch && matchesStatus;
-        });
-
-        // Date sorting
-        filteredApplications.sort((a, b) => {
-            const dateA = a.applicationDate || "";
-            const dateB = b.applicationDate || "";
-
-            if (sortDate.value === "oldest") {
-                return dateA.localeCompare(dateB);
-            }
-
-            return dateB.localeCompare(dateA);
-        });
-
-        // Clear previous cards
-        applicationsList.innerHTML = "";
-
-        if (filteredApplications.length === 0) {
-            applicationsList.textContent =
-                applications.length === 0
-                    ? "No applications yet. Add your first one!"
-                    : "No matching applications found.";
-            return;
-        }
-
-        // Create application cards
-        filteredApplications.forEach(application => {
-            const card = document.createElement("div");
-            card.className = "application-card";
-
-            const company = document.createElement("h3");
-            company.textContent = application.companyName;
-
-            const role = document.createElement("p");
-            role.textContent = "Role: " + application.jobRole;
-
-            const date = document.createElement("p");
-            date.textContent =
-                "Applied on: " + application.applicationDate;
-
-            const status = document.createElement("span");
-            status.className =
-                "status " + application.status.toLowerCase();
-            status.textContent = application.status;
-
-            // Edit button
-            const editButton = document.createElement("button");
-            editButton.textContent = "Edit";
-            editButton.className = "edit-button";
-
-            editButton.addEventListener("click", () => {
-                document.getElementById("companyName").value =
-                    application.companyName;
-
-                document.getElementById("jobRole").value =
-                    application.jobRole;
-
-                applicationDateInput.value =
-                    application.applicationDate;
-
-                document.getElementById("status").value =
-                    application.status;
-
-                form.dataset.editId = application.id;
-
-                form.querySelector("button[type='submit']").textContent =
-                    "Update Application";
-
-                message.textContent = "Editing application...";
-                message.style.color = "#4f46e5";
-
-                document.getElementById("companyName").focus();
-            });
-
-            // Delete button
-            const deleteButton = document.createElement("button");
-            deleteButton.textContent = "Delete";
-            deleteButton.className = "delete-button";
-
-            deleteButton.addEventListener("click", () => {
-                deleteApplication(application.id);
-            });
-
-            card.append(
-                company,
-                role,
-                date,
-                status,
-                editButton,
-                deleteButton
-            );
-
-            applicationsList.appendChild(card);
-        });
-
-    } catch (error) {
-        applicationsList.textContent =
-            "Could not load applications. Please check the backend.";
-
-        console.error("Loading error:", error);
-    }
+function showMessage(text, isError = false) {
+  message.textContent = text;
+  message.style.color = isError ? "#dc2626" : "#15803d";
 }
 
-// Add or update an application
-form.addEventListener("submit", async (event) => {
-    event.preventDefault();
+function updateDashboard() {
+  const count = (status) =>
+    applications.filter(app => app.status === status).length;
 
-    const companyName =
-        document.getElementById("companyName").value.trim();
+  const cards = document.querySelectorAll(".dashboard-card h2, .stat-card h2, .dashboard-card .count, .stat-card .count");
+  const values = [
+    applications.length,
+    count("Interview"),
+    count("Selected"),
+    count("Rejected")
+  ];
 
-    const jobRole =
-        document.getElementById("jobRole").value.trim();
+  cards.forEach((card, index) => {
+    if (index < values.length) card.textContent = values[index];
+  });
+}
 
-    const applicationDate = applicationDateInput.value;
-    const status = document.getElementById("status").value;
+function renderApplications() {
+  const search = (searchInput?.value || "").toLowerCase().trim();
+  const status = filterStatus?.value || "";
 
-    // Validate required fields
-    if (!companyName || !jobRole || !applicationDate) {
-        message.textContent = "Please fill in all required fields.";
-        message.style.color = "red";
-        return;
-    }
+  let filtered = applications.filter(app =>
+    (app.companyName || "").toLowerCase().includes(search) ||
+    (app.jobRole || "").toLowerCase().includes(search)
+  );
 
-    // Validate application date
-    setMaximumApplicationDate();
+  if (status) {
+    filtered = filtered.filter(app => app.status === status);
+  }
 
-    const today = applicationDateInput.max;
+  if (sortDate?.value === "oldest") {
+    filtered.sort((a, b) => (a.applicationDate || "").localeCompare(b.applicationDate || ""));
+  } else {
+    filtered.sort((a, b) => (b.applicationDate || "").localeCompare(a.applicationDate || ""));
+  }
 
-    if (applicationDate > today) {
-        message.textContent =
-            "Application date cannot be in the future.";
+  applicationsList.innerHTML = "";
 
-        message.style.color = "red";
-        return;
-    }
+  if (filtered.length === 0) {
+    applicationsList.textContent = "No applications found.";
+    updateDashboard();
+    return;
+  }
 
-    const application = {
-        companyName,
-        jobRole,
-        applicationDate,
-        status
-    };
+  filtered.forEach(app => {
+    const card = document.createElement("div");
+    card.className = "application-card";
 
-    const editId = form.dataset.editId;
+    const details = document.createElement("div");
+    const company = document.createElement("h3");
+    company.textContent = app.companyName;
+    const role = document.createElement("p");
+    role.textContent = `Role: ${app.jobRole}`;
+    const date = document.createElement("p");
+    date.textContent = `Application Date: ${app.applicationDate || "Not set"}`;
+    const statusText = document.createElement("p");
+    statusText.textContent = `Status: ${app.status}`;
+    statusText.className = "status-badge " + (app.status || "").toLowerCase();
 
-    try {
-        const response = await fetch(
-            editId ? `${API_URL}/${editId}` : API_URL,
-            {
-                method: editId ? "PUT" : "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(application)
-            }
-        );
+    details.append(company, role, date, statusText);
 
-        if (!response.ok) {
-            throw new Error("Failed to save application");
-        }
+    const actions = document.createElement("div");
+    actions.className = "application-actions";
 
-        form.reset();
-        delete form.dataset.editId;
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.textContent = "Edit";
+    editButton.addEventListener("click", () => {
+      document.getElementById("companyName").value = app.companyName;
+      document.getElementById("jobRole").value = app.jobRole;
+      applicationDateInput.value = app.applicationDate || "";
+      document.getElementById("status").value = app.status;
+      editingId = app.id;
+      showMessage("Editing application.");
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
 
-        form.querySelector("button[type='submit']").textContent =
-            "Add Application";
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+    deleteButton.addEventListener("click", () => {
+      if (!confirm(`Delete application at ${app.companyName}?`)) return;
+      applications = applications.filter(item => item.id !== app.id);
+      saveApplications();
+      renderApplications();
+      showMessage("Application deleted.");
+    });
 
-        message.textContent = editId
-            ? "Application updated successfully!"
-            : "Application added successfully!";
+    actions.append(editButton, deleteButton);
+    card.append(details, actions);
+    applicationsList.appendChild(card);
+  });
 
-        message.style.color = "green";
+  updateDashboard();
+}
 
-        await loadApplications();
+form.addEventListener("submit", event => {
+  event.preventDefault();
+  setMaximumApplicationDate();
 
-    } catch (error) {
-        message.textContent =
-            "Could not save application. Please try again.";
+  const companyName = document.getElementById("companyName").value.trim();
+  const jobRole = document.getElementById("jobRole").value.trim();
+  const applicationDate = applicationDateInput.value;
+  const status = document.getElementById("status").value;
 
-        message.style.color = "red";
-        console.error("Saving error:", error);
-    }
+  if (!companyName || !jobRole || !applicationDate) {
+    showMessage("Please complete all required fields.", true);
+    return;
+  }
+
+  if (applicationDate > applicationDateInput.max) {
+    showMessage("Application date cannot be in the future.", true);
+    return;
+  }
+
+  if (editingId !== null) {
+    applications = applications.map(app =>
+      app.id === editingId
+        ? { ...app, companyName, jobRole, applicationDate, status }
+        : app
+    );
+    editingId = null;
+    showMessage("Application updated successfully.");
+  } else {
+    applications.push({
+      id: Date.now(),
+      companyName,
+      jobRole,
+      applicationDate,
+      status
+    });
+    showMessage("Application added successfully.");
+  }
+
+  saveApplications();
+  form.reset();
+  renderApplications();
 });
 
-// Delete an application
-async function deleteApplication(id) {
-    const confirmed = confirm(
-        "Are you sure you want to delete this application?"
-    );
+searchInput?.addEventListener("input", renderApplications);
+filterStatus?.addEventListener("change", renderApplications);
+sortDate?.addEventListener("change", renderApplications);
 
-    if (!confirmed) {
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/${id}`, {
-            method: "DELETE"
-        });
-
-        if (!response.ok) {
-            throw new Error("Failed to delete application");
-        }
-
-        message.textContent = "Application deleted successfully!";
-        message.style.color = "green";
-
-        await loadApplications();
-
-    } catch (error) {
-        message.textContent = "Could not delete application.";
-        message.style.color = "red";
-        console.error("Deletion error:", error);
-    }
-}
-
-// Search, filter, and sorting listeners
-searchInput.addEventListener("input", loadApplications);
-filterStatus.addEventListener("change", loadApplications);
-sortDate.addEventListener("change", loadApplications);
-
-// Load applications on page startup
-loadApplications();
+setMaximumApplicationDate();
+renderApplications();
